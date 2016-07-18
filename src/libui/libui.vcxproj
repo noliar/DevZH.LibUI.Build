@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)\Config.Definitions.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6b220ae3-9f8c-46d6-9090-0aaeddd449da}</ProjectGuid>
+    <Platform Condition="'$(Platform)'==''">Win32</Platform>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <Keyword>Clang</Keyword>
+    <RootNamespace>libui</RootNamespace>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <PlatformToolset>v140_Clang_3_7</PlatformToolset>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <BuildForOneCore Condition="'$(BuildForOneCore)' == ''">False</BuildForOneCore>
+    <GenerateManifest>false</GenerateManifest>
+    <ProjectName>libui</ProjectName>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>bin\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(MSBuildThisFileDirectory)\Native.Settings" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions Condition="'$(BuildForOneCore)' == 'True'">ONECORE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\submodules\libui;..\..\submodules\libui\common;..\..\submodules\libui\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>libui_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile />
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>user32.lib;kernel32.lib;usp10.lib;gdi32.lib;comctl32.lib;uxtheme.lib;msimg32.lib;comdlg32.lib;d2d1.lib;dwrite.lib;ole32.lib;oleaut32.lib;oleacc.lib;uuid.lib</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ManifestFile />
+      <LargeAddressAware>true</LargeAddressAware>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\submodules\libui\ui.h" />
+    <ClInclude Include="..\..\submodules\libui\ui_windows.h" />
+    <ClInclude Include="..\..\submodules\libui\uitable.h" />
+    <ClInclude Include="..\..\submodules\libui\common\controlsigs.h" />
+    <ClInclude Include="..\..\submodules\libui\common\uipriv.h" />
+    <ClInclude Include="..\..\submodules\libui\windows\area.hpp" />
+    <ClInclude Include="..\..\submodules\libui\windows\compilerver.hpp" />
+    <ClInclude Include="..\..\submodules\libui\windows\draw.hpp" />
+    <ClInclude Include="..\..\submodules\libui\windows\resources.hpp" />
+    <ClInclude Include="..\..\submodules\libui\windows\uipriv_windows.hpp" />
+    <ClInclude Include="..\..\submodules\libui\windows\winapi.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\submodules\libui\common\areaevents.c">
+      <ObjectFileName>$(IntDir)/common/areaevents.c.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\common\control.c">
+      <ObjectFileName>$(IntDir)/common/control.c.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\common\debug.c">
+      <ObjectFileName>$(IntDir)/common/debug.c.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\common\matrix.c" />
+    <ClCompile Include="..\..\submodules\libui\common\shouldquit.c" />
+    <ClCompile Include="..\..\submodules\libui\common\userbugs.c" />
+    <ClCompile Include="..\..\submodules\libui\windows\alloc.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\area.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\areadraw.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\areaevents.cpp">
+      <ObjectFileName>$(IntDir)/windows/areaevents.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\windows\areascroll.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\areautil.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\box.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\button.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\checkbox.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\colorbutton.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\colordialog.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\combobox.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\container.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\control.cpp">
+      <ObjectFileName>$(IntDir)/windows/control.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\windows\d2dscratch.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\datetimepicker.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\debug.cpp">
+      <ObjectFileName>$(IntDir)/windows/debug.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\submodules\libui\windows\draw.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\drawmatrix.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\drawpath.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\drawtext.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\dwrite.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\editablecombo.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\entry.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\events.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\fontbutton.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\fontdialog.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\form.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\graphemes.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\grid.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\group.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\init.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\label.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\main.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\menu.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\multilineentry.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\parent.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\progressbar.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\radiobuttons.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\separator.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\sizing.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\slider.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\spinbox.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\stddialogs.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\tab.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\tabpage.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\text.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\utf16.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\utilwin.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\window.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\winpublic.cpp" />
+    <ClCompile Include="..\..\submodules\libui\windows\winutil.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\submodules\libui\windows\resources.rc"  />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
