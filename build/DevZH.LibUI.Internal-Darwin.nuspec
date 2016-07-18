@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+    <metadata>
+        <id>DevZH.LibUI.Internal-Darwin</id>
+        <version>0.0.1-ignored</version>
+        <authors>¶ÅÏşÓî</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>libui build package - Darwin</description>
+    </metadata>
+    <files>
+        <file src="contents/**" />
+    </files>
+</package>

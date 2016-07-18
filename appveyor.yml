@@ -1,0 +1,17 @@
+os: Visual Studio 2015
+version: Build {build}
+
+configuration:
+  - Release
+
+install:
+  - git submodule update --init --recursive
+  - ps: (Get-Content submodules\libui\CMakeLists.txt).replace('/RTC1 /RTCs /RTCu', '') | Set-Content submodules\libui\CMakeLists.txt
+
+build_script:
+  - cmd: build.cmd package
+
+artifacts:
+  - path: artifacts/build/*.nupkg
+    name: libui build package - Windows
+

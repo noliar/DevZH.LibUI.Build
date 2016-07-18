@@ -1,0 +1,3 @@
+[submodule "submodules/libui"]
+	path = submodules/libui
+	url = https://github.com/andlabs/libui.git

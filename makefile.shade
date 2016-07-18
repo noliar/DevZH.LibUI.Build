@@ -1,0 +1,107 @@
+var PRODUCT_VERSION = '1.0.0-alpha'
+var AUTHORS='∂≈œ˛”Ó'
+
+use-standard-lifecycle
+k-standard-goals
+
+var Configuration2 = '${E("Configuration")}'
+var ROOT = '${Directory.GetCurrentDirectory()}'
+var BUILD_DIR2 = '${Path.Combine(ROOT, "artifacts", "build")}'
+var PROGRAM_FILES_X86 = '${Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}'
+var MSBUILD = '${Path.Combine(PROGRAM_FILES_X86, "MSBuild", "14.0", "Bin", "MSBuild.exe")}'
+var LIBUI_ROOT = '${Path.Combine(ROOT, "submodules", "libui")}'
+
+var FULL_VERSION = '${PRODUCT_VERSION + "-" + E("DOTNET_BUILD_VERSION")}'
+
+#native-compile
+
+#build-compile target='compile'
+
+#build-windows .ensure-msbuild target='build-compile' if='CanBuildForWindows'
+    @{
+      Exec(MSBUILD, "\"" + Path.Combine(LIBUI_ROOT, "build\\x86\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=Win32 /p:Configuration=" + Configuration2);
+      Exec(MSBUILD, "\"" + Path.Combine(LIBUI_ROOT, "build\\x64\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=x64 /p:Configuration=" + Configuration2);
+      Exec(MSBUILD, "\"" + Path.Combine(LIBUI_ROOT, "build\\ARM\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=ARM /p:Configuration=" + Configuration2);
+    }
+
+#copy-symbols target='build-compile' if='CanBuildForWindows'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x86\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\Win32", Configuration2)}' include='*.pdb' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x64\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\x64", Configuration2)}' include='*.pdb' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\ARM\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\ARM", Configuration2)}' include='*.pdb' overwrite='${true}'
+
+#ensure-msbuild
+    @{
+        if (!File.Exists(MSBUILD))
+        {
+            Log.Warn("msbuild version 14 not found. Please ensure you have the VS 2015 C++ SDK installed.");
+            Environment.Exit(1);
+        }
+    }
+
+#nuget-pack target='package' if='CanBuildForWindows'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x86\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x86\\native")}' include='*.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x64\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x64\\native")}' include='*.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\ARM\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-arm\\native")}' include='*.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win")}' include='DevZH.LibUI.Internal-Windows.nuspec' overwrite='${true}'
+
+    nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-win\\DevZH.LibUI.Internal-Windows.nuspec")}'
+
+functions @{
+    bool CanBuildForWindows
+    {
+        get
+        {
+            var p = (int)Environment.OSVersion.Platform;
+            return (p != 4) && (p != 6) && (p != 128);
+        }
+    }
+
+    bool CanBuildForDarwin
+    {
+        get
+        {
+            return string.Equals(Uname(), "Darwin");
+        }
+    }
+
+    bool CanBuildForLinux
+    {
+        get
+        {
+            return string.Equals(Uname(), "Linux");
+        }
+    }
+
+    public string Uname()
+    {
+        try
+        {
+            string uname;
+            ExecuteAndRedirectOutput("uname", "", out uname);
+            return string.IsNullOrEmpty(uname) ? null : uname.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    int ExecuteAndRedirectOutput(string command, string argument, out string content)
+    {
+        var procStartInfo = new ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = argument,
+            WorkingDirectory = Directory.GetCurrentDirectory(),
+            UseShellExecute = false
+        };
+        procStartInfo.RedirectStandardOutput = true;
+
+        var process = Process.Start(procStartInfo);
+        content = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+
+        return process.ExitCode;
+    }
+}
