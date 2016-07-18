@@ -10,6 +10,7 @@ var BUILD_DIR2 = '${Path.Combine(ROOT, "artifacts", "build")}'
 var PROGRAM_FILES_X86 = '${Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}'
 var MSBUILD = '${Path.Combine(PROGRAM_FILES_X86, "MSBuild", "14.0", "Bin", "MSBuild.exe")}'
 var LIBUI_ROOT = '${Path.Combine(ROOT, "submodules", "libui")}'
+var MAKE = '${SearchForMake()}'
 
 var FULL_VERSION = '${PRODUCT_VERSION + "-" + E("DOTNET_BUILD_VERSION")}'
 
@@ -47,6 +48,36 @@ var FULL_VERSION = '${PRODUCT_VERSION + "-" + E("DOTNET_BUILD_VERSION")}'
 
     nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-win\\DevZH.LibUI.Internal-Windows.nuspec")}'
 
+#build-darwin .ensure-make target='build-compile' if='CanBuildForDarwin'
+      exec program='${MAKE}' commandline='' workingdir='${Path.Combine(LIBUI_ROOT, "build/osx")}'
+
+#nuget-pack target='package' if='CanBuildForDarwin'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/osx/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin/contents/runtimes/osx-x64/native")}' include='*.dylib' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin/contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin")}' include='DevZH.LibUI.Internal-Darwin.nuspec' overwrite='${true}'
+    nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-darwin/DevZH.LibUI.Internal-Darwin.nuspec")}'
+
+#build-linux .ensure-make target='build-compile' if='CanBuildForLinux'
+    exec program='${MAKE}' commandline='' workingdir='${Path.Combine(LIBUI_ROOT, "build/linux")}'
+
+#nuget-pack target='package' if='CanBuildForLinux'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/linux/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/debian-x64/native")}' include='*.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/linux/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/rhel-x64/native")}' include='*.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/linux/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/fedora-x64/native")}' include='*.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/linux/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/opensuse-x64/native")}' include='*.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
+    copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux")}' include='DevZH.LibUI.Internal-Linux.nuspec' overwrite='${true}'
+    nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-linux/DevZH.LibUI.Internal-Linux.nuspec")}'
+
+#ensure-make
+    @{
+        if (MAKE == null || !File.Exists(MAKE))
+        {
+            Log.Warn("make not found. Please ensure you have make on the path.");
+            Environment.Exit(1);
+        }
+    }
+
 functions @{
     bool CanBuildForWindows
     {
@@ -71,6 +102,19 @@ functions @{
         {
             return string.Equals(Uname(), "Linux");
         }
+    }
+
+    public string SearchForMake()
+    {
+        foreach(var dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))
+        {
+            if (File.Exists(Path.Combine(dir, "make")))
+            {
+                return Path.Combine(dir, "make");
+            }
+        }
+
+        return null;
     }
 
     public string Uname()
