@@ -6,7 +6,8 @@ configuration:
 
 install:
   - git submodule update --init --recursive
-  - ps: (Get-Content submodules\libui\CMakeLists.txt).replace('/RTC1 /RTCs /RTCu', '') | Set-Content submodules\libui\CMakeLists.txt
+  - cmd: if %CONFIGURATION% == "Debug" (set EXFLAG="/MTd") else (set EXFLAG="/MT")
+  - ps: (Get-Content submodules\libui\CMakeLists.txt).replace('/RTC1 /RTCs /RTCu', $env:EXFLAG) | Set-Content submodules\libui\CMakeLists.txt
 
 build_script:
   - cmd: build.cmd package
