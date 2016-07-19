@@ -2,13 +2,7 @@
 repoFolder="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $repoFolder
 
-cd submodules/libui
-export DOTNET_BUILD_VERSION=$(git rev-list --count HEAD)
-cmake --version
-mkdir build && cd build
-mkdir "$TRAVIS_OS_NAME" && cd "$TRAVIS_OS_NAME"
-cmake ../../ -G"Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
-cd ../../../../
+export DOTNET_BUILD_VERSION=$(git -C submodules/libui rev-list --count HEAD)
 
 koreBuildZip="https://github.com/aspnet/KoreBuild/archive/dev.zip"
 if [ ! -z $KOREBUILD_ZIP ]; then
