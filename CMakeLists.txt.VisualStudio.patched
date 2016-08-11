@@ -1,0 +1,47 @@
+diff --git "a/CMakeLists.txt" "b/CMakeLists.txt"
+index eb1696d..c873451 100644
+--- "a/CMakeLists.txt"
++++ "b/CMakeLists.txt"	
+@@ -30,6 +30,14 @@ endif()
+ project(libui)
+ option(BUILD_SHARED_LIBS "Whether to build libui as a shared library or a static library" ON)
+ 
++# - https://github.com/bulletphysics/bullet3/blob/master/CMakeLists.txt#L31
++#statically linking VC++ isn't supported for WindowsPhone/WindowsStore
++if (CMAKE_SYSTEM_NAME STREQUAL WindowsPhone OR CMAKE_SYSTEM_NAME STREQUAL WindowsStore)
++	option(USE_MSVC_RUNTIME_LIBRARY_DLL "Use MSVC Runtime Library DLL (/MD or /MDd)" ON)
++else ()
++	option(USE_MSVC_RUNTIME_LIBRARY_DLL "Use MSVC Runtime Library DLL (/MD or /MDd)" OFF)
++endif ()
++
+ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/out")
+ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/out")
+ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/out")
+@@ -77,7 +85,7 @@ if(MSVC)
+ 	set(_COMMON_CFLAGS
+ 		/W4 /wd4100
+ 		/bigobj /nologo
+-		/RTC1 /RTCs /RTCu
++		$<$<CONFIG:Debug>:/RTC1 /RTCs /RTCu>
+ 		/EHsc
+ 	)
+ 
+@@ -90,6 +98,18 @@ if(MSVC)
+ 		/MANIFEST:NO
+ 	)
+ 
++	if(NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
++		#We statically link to reduce dependancies
++		foreach(flag_var CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO )
++			if(${flag_var} MATCHES "/MD")
++				STRING(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
++			endif()
++			if(${flag_var} MATCHES "/MDd")
++				STRING(REGEX REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
++			endif()
++		ENDFOREACH(flag_var)
++	endif()
++
+ 	# TODO autogenerate a .def file?
+ 
+ 	# more incremental linking fixes

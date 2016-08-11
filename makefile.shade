@@ -10,8 +10,6 @@ var BUILD_DIR2 = '${Path.Combine(ROOT, "artifacts", "build")}'
 var PROGRAM_FILES_X86 = '${Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}'
 var MSBUILD = '${Path.Combine(PROGRAM_FILES_X86, "MSBuild", "14.0", "Bin", "MSBuild.exe")}'
 var LIBUI_ROOT = '${Path.Combine(ROOT, "submodules", "libui")}'
-var MAKE = '${SearchForMake()}'
-var CLANG = '${SearchForClang()}'
 
 var FULL_VERSION = '${PRODUCT_VERSION + "-" + E("DOTNET_BUILD_VERSION")}'
 
@@ -19,172 +17,34 @@ var FULL_VERSION = '${PRODUCT_VERSION + "-" + E("DOTNET_BUILD_VERSION")}'
 
 #build-compile target='compile'
 
-#build-windows .ensure-msbuild target='build-compile' if='CanBuildForWindows'
-    @{
-      Exec(MSBUILD, "\"" + Path.Combine(ROOT, "src\\libui\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=Win32 /p:Configuration=" + Configuration2);
-      Exec(MSBUILD, "\"" + Path.Combine(ROOT, "src\\libui\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=x64 /p:Configuration=" + Configuration2);
-      Exec(MSBUILD, "\"" + Path.Combine(ROOT, "src\\libui\\libui.vcxproj") + "\"" + " /t:Rebuild /p:Platform=ARM /p:Configuration=" + Configuration2);
-    }
-
 #copy-symbols target='build-compile' if='CanBuildForWindows'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\Win32", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\Win32", Configuration2)}' include='*.pdb' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\x64", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\x64", Configuration2)}' include='*.pdb' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\ARM", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\ARM", Configuration2)}' include='*.pdb' overwrite='${true}'
-
-#ensure-msbuild
-    @{
-        if (!File.Exists(MSBUILD))
-        {
-            Log.Warn("msbuild version 14 not found. Please ensure you have the VS 2015 C++ SDK installed.");
-            Environment.Exit(1);
-        }
-    }
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x86\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\Win32", Configuration2)}' include='*.pdb' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x64\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\x64", Configuration2)}' include='*.pdb' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\ARM\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "symbols\\ARM", Configuration2)}' include='*.pdb' overwrite='${true}'
 
 #nuget-pack target='package' if='CanBuildForWindows'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\Win32", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x86\\native")}' include='libui.dll' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\x64", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x64\\native")}' include='libui.dll' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src\\libui\\bin\\ARM", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-arm\\native")}' include='libui.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x86\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x86\\native")}' include='libui.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\x64\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-x64\\native")}' include='libui.dll' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build\\ARM\\out", Configuration2)}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents\\runtimes\\win7-arm\\native")}' include='libui.dll' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win\\contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-win")}' include='DevZH.LibUI.Internal-Windows.nuspec' overwrite='${true}'
 
     nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-win\\DevZH.LibUI.Internal-Windows.nuspec")}'
 
-#build-darwin .ensure-clang target='build-compile' if='CanBuildForDarwin'
-      @{
-        var sourceFiles = GetCommonSourceFiles(LIBUI_ROOT);
-        sourceFiles.AddRange(new List<string>{
-            Path.Combine(LIBUI_ROOT, "darwin/alloc.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/area.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/areaevents.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/autolayout.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/box.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/button.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/checkbox.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/colorbutton.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/combobox.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/control.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/datetimepicker.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/debug.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/draw.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/drawtext.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/editablecombo.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/entry.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/fontbutton.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/form.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/grid.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/group.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/label.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/main.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/map.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/menu.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/multilineentry.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/progressbar.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/radiobuttons.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/scrollview.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/separator.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/slider.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/spinbox.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/stddialogs.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/tab.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/text.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/util.m"),
-            Path.Combine(LIBUI_ROOT, "darwin/window.m"),
-        });
-
-        var outputDir = Path.Combine(ROOT, "src/libui/bin/darwin");
-        var outputPath = Path.Combine(outputDir, "libui.dylib");
-        Directory.CreateDirectory(outputDir);
-
-        var sources = string.Join(" ", sourceFiles);
-
-        Exec(CLANG,
-            string.Format("-dynamiclib --std=c99 -ObjC -framework Foundation -framework AppKit {0} -o {1}  -lm -pthread -fPIC -I../ -Wall -Wextra -Wno-unused-parameter -Wno-switch -fvisibility=hidden -s -O3 -pedantic -Dlibui_EXPORTS -DNDEBUG", sources, outputPath, LIBUI_ROOT));
-    }
-
 #nuget-pack target='package' if='CanBuildForDarwin'
-    copy sourceDir='${Path.Combine(ROOT, "src/libui/bin/darwin")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin/contents/runtimes/osx-x64/native")}' include='libui.dylib' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/osx/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin/contents/runtimes/osx-x64/native")}' include='libui.dylib' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin/contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-darwin")}' include='DevZH.LibUI.Internal-Darwin.nuspec' overwrite='${true}'
     nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-darwin/DevZH.LibUI.Internal-Darwin.nuspec")}'
 
-#build-linux .ensure-clang target='build-compile' if='CanBuildForLinux'
-    @{
-        var sourceFiles = GetCommonSourceFiles(LIBUI_ROOT);
-        sourceFiles.AddRange(new List<string>{
-            Path.Combine(LIBUI_ROOT, "unix/alloc.c"),
-            Path.Combine(LIBUI_ROOT, "unix/area.c"),
-            Path.Combine(LIBUI_ROOT, "unix/box.c"),
-            Path.Combine(LIBUI_ROOT, "unix/button.c"),
-            Path.Combine(LIBUI_ROOT, "unix/checkbox.c"),
-            Path.Combine(LIBUI_ROOT, "unix/child.c"),
-            Path.Combine(LIBUI_ROOT, "unix/colorbutton.c"),
-            Path.Combine(LIBUI_ROOT, "unix/combobox.c"),
-            Path.Combine(LIBUI_ROOT, "unix/control.c"),
-            Path.Combine(LIBUI_ROOT, "unix/datetimepicker.c"),
-            Path.Combine(LIBUI_ROOT, "unix/debug.c"),
-            Path.Combine(LIBUI_ROOT, "unix/draw.c"),
-            Path.Combine(LIBUI_ROOT, "unix/drawmatrix.c"),
-            Path.Combine(LIBUI_ROOT, "unix/drawpath.c"),
-            Path.Combine(LIBUI_ROOT, "unix/drawtext.c"),
-            Path.Combine(LIBUI_ROOT, "unix/editablecombo.c"),
-            Path.Combine(LIBUI_ROOT, "unix/entry.c"),
-            Path.Combine(LIBUI_ROOT, "unix/fontbutton.c"),
-            Path.Combine(LIBUI_ROOT, "unix/form.c"),
-            Path.Combine(LIBUI_ROOT, "unix/graphemes.c"),
-            Path.Combine(LIBUI_ROOT, "unix/grid.c"),
-            Path.Combine(LIBUI_ROOT, "unix/group.c"),
-            Path.Combine(LIBUI_ROOT, "unix/label.c"),
-            Path.Combine(LIBUI_ROOT, "unix/main.c"),
-            Path.Combine(LIBUI_ROOT, "unix/menu.c"),
-            Path.Combine(LIBUI_ROOT, "unix/multilineentry.c"),
-            Path.Combine(LIBUI_ROOT, "unix/progressbar.c"),
-            Path.Combine(LIBUI_ROOT, "unix/radiobuttons.c"),
-            Path.Combine(LIBUI_ROOT, "unix/separator.c"),
-            Path.Combine(LIBUI_ROOT, "unix/slider.c"),
-            Path.Combine(LIBUI_ROOT, "unix/spinbox.c"),
-            Path.Combine(LIBUI_ROOT, "unix/stddialogs.c"),
-            Path.Combine(LIBUI_ROOT, "unix/tab.c"),
-            Path.Combine(LIBUI_ROOT, "unix/text.c"),
-            Path.Combine(LIBUI_ROOT, "unix/util.c"),
-            Path.Combine(LIBUI_ROOT, "unix/window.c"),
-        });
-
-        var outputDir = Path.Combine(ROOT, "src/libui/bin/linux");
-        var outputPath = Path.Combine(outputDir, "libui.so");
-        Directory.CreateDirectory(outputDir);
-
-        var sources = string.Join(" ", sourceFiles);
-
-        Exec(CLANG,
-            string.Format("{0} -lm -pthread -ldl -fPIC -fvisibility=hidden -shared -o {1}  -lgtk-3 -lgdk-3 -latk-1.0 -lgio-2.0 -lpangocairo-1.0 -lgdk_pixbuf-2.0 -lcairo-gobject -lpango-1.0 -lcairo -lgobject-2.0 -lglib-2.0 -I{2}   -I/usr/include/gtk-3.0 -I/usr/include/atk-1.0 -I/usr/include/at-spi2-atk/2.0 -I/usr/include/pango-1.0 -I/usr/include/gio-unix-2.0/ -I/usr/include/cairo -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/harfbuzz -I/usr/include/freetype2 -I/usr/include/pixman-1 -I/usr/include/libpng12 -Wall -Wextra -Wno-unused-parameter -Wno-switch -O3 -s --std=c99 -pedantic -Dlibui_EXPORTS -DNDEBUG", sources, outputPath, LIBUI_ROOT));
-    }
-
 #nuget-pack target='package' if='CanBuildForLinux'
-    copy sourceDir='${Path.Combine(ROOT, "src/libui/bin/linux")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/debian-x64/native")}' include='libui.so' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src/libui/bin/linux")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/rhel-x64/native")}' include='libui.so' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src/libui/bin/linux")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/fedora-x64/native")}' include='libui.so' overwrite='${true}'
-    copy sourceDir='${Path.Combine(ROOT, "src/libui/bin/linux")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/opensuse-x64/native")}' include='libui.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/ubuntu/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/debian-x64/native")}' include='libui.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/centos/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/rhel-x64/native")}' include='libui.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/fedora/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/fedora-x64/native")}' include='libui.so' overwrite='${true}'
+    copy sourceDir='${Path.Combine(LIBUI_ROOT, "build/opensuse/out")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents/runtimes/opensuse-x64/native")}' include='libui.so' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux/contents")}' include='*' exclude='*.nuspec' overwrite='${true}'
     copy sourceDir='${Path.Combine(ROOT, "build")}' outputDir='${Path.Combine(BUILD_DIR2, "package-src-linux")}' include='DevZH.LibUI.Internal-Linux.nuspec' overwrite='${true}'
     nuget-pack packageVersion='${FULL_VERSION}' outputDir='${BUILD_DIR2}' extra='-NoPackageAnalysis' nugetPath='.build/nuget.exe' nuspecFile='${Path.Combine(BUILD_DIR2, "package-src-linux/DevZH.LibUI.Internal-Linux.nuspec")}'
-
-#ensure-make
-    @{
-        if (MAKE == null || !File.Exists(MAKE))
-        {
-            Log.Warn("make not found. Please ensure you have make on the path.");
-            Environment.Exit(1);
-        }
-    }
-
-#ensure-clang
-    @{
-        if (CLANG == null || !File.Exists(CLANG))
-        {
-            Log.Warn("clang not found. Please ensure you have clang on the path or set CXX to a path to clang.");
-            Environment.Exit(1);
-        }
-    }
 
 functions @{
     bool CanBuildForWindows
@@ -210,43 +70,6 @@ functions @{
         {
             return string.Equals(Uname(), "Linux");
         }
-    }
-
-    public string SearchForMake()
-    {
-        foreach(var dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))
-        {
-            if (File.Exists(Path.Combine(dir, "make")))
-            {
-                return Path.Combine(dir, "make");
-            }
-        }
-
-        return null;
-    }
-
-    public string SearchForClang()
-    {
-        var CXX = Environment.GetEnvironmentVariable("CXX");
-
-        if (!string.IsNullOrEmpty(CXX))
-        {
-            return CXX;
-        }
-
-        foreach(var dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))
-        {
-            if (File.Exists(Path.Combine(dir, "clang")))
-            {
-                return Path.Combine(dir, "clang");
-            }
-            else if (File.Exists(Path.Combine(dir, "clang-3.5")))
-            {
-                return Path.Combine(dir, "clang-3.5");
-            }
-        }
-
-        return null;
     }
 
     public string Uname()
@@ -279,18 +102,5 @@ functions @{
         process.WaitForExit();
 
         return process.ExitCode;
-    }
-
-    public List<string> GetCommonSourceFiles(string libuiRoot)
-    {
-       return new List<string>
-        {
-            Path.Combine(libuiRoot, "common/areaevents.c"),
-            Path.Combine(libuiRoot, "common/control.c"),
-            Path.Combine(libuiRoot, "common/debug.c"),
-            Path.Combine(libuiRoot, "common/matrix.c"),
-            Path.Combine(libuiRoot, "common/shouldquit.c"),
-            Path.Combine(libuiRoot, "common/userbugs.c"),
-       };
     }
 }
