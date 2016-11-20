@@ -2,6 +2,7 @@
 
 for /f "delims=" %%i in ('git -C submodules/libui rev-list --count HEAD') do set DOTNET_BUILD_VERSION=%%i
 cd submodules/libui
+git apply --ignore-whitespace --whitespace=nowarn nowintable.diff
 git apply -- ../../CMakeLists.txt.VisualStudio.patched
 cmake --version
 mkdir build && cd build
